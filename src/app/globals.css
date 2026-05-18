@@ -1,1 +1,87 @@
 @import "tailwindcss";
+
+@theme {
+  --color-canvas: #ffffff;
+  --color-royal-blue: #0A192F; /* Deep, saturated traditional royal blue / navy */
+  --color-gold: #D4AF37; /* Refined, metallic gold */
+  
+  --font-serif: var(--font-playfair);
+  --font-sans: var(--font-montserrat);
+}
+
+@layer base {
+  :root {
+    --canvas: #ffffff;
+    --royal-blue: #0F2A5F; /* Updated to a rich Royal Blue */
+    --gold: #C5A059; /* Elegant gold */
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-royal-blue);
+    font-family: var(--font-sans), sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-serif {
+    font-family: var(--font-serif), serif;
+  }
+}
+
+/* Custom Checkbox styles */
+@utility gold-checkbox {
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid var(--color-gold);
+  border-radius: 0;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+
+  &:checked {
+    background-color: var(--color-gold);
+
+    &::after {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: 1px;
+      width: 4px;
+      height: 8px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+  }
+}
+
+/* Bracket accents for product cards */
+@utility card-brackets {
+  position: relative;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-color: var(--color-gold);
+    border-style: solid;
+    pointer-events: none;
+  }
+
+  &::before {
+    top: 0;
+    left: 0;
+    border-width: 1px 0 0 1px;
+  }
+
+  &::after {
+    bottom: 0;
+    right: 0;
+    border-width: 0 1px 1px 0;
+  }
+}
