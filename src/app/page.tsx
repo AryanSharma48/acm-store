@@ -2,12 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useCart } from '@/app/contexts/CartContext';
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
+
 
 type Product = {
   id: string;
@@ -19,6 +16,7 @@ type Product = {
 };
 
 export default function StoreFront() {
+  const { addItem } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,73 +35,26 @@ export default function StoreFront() {
     fetchProducts();
   }, []);
 
-  const handleCheckout = async (product: Product) => {
-    try {
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: product.price, productId: product.id }),
-      });
-      const data = await res.json();
-
-      if (data.error) {
-        alert('Error initiating checkout');
-        return;
-      }
-
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: data.amount,
-        currency: data.currency,
-        name: 'ACM Merch Collective',
-        description: `Purchase of ${product.name}`,
-        order_id: data.orderId,
-        handler: async function (response: any) {
-          const verifyRes = await fetch('/api/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            }),
-          });
-          const verifyData = await verifyRes.json();
-          if (verifyData.success) {
-            alert('Payment Successful! Order placed.');
-          } else {
-            alert('Payment verification failed.');
-          }
-        },
-        prefill: {
-          name: 'Academic Scholar',
-          email: 'scholar@university.edu',
-          contact: '9999999999',
-        },
-        theme: {
-          color: '#0A192F', // Royal Blue
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } catch (error) {
-      console.error('Checkout error:', error);
-      alert('Error during checkout.');
-    }
+  const handleAddToCart = (product: Product) => {
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image_url: product.image_url,
+    });
+    alert('Added to cart');
   };
 
   return (
     <main className="w-full">
       {/* Hero Section */}
       <section className="relative w-full h-[60vh] md:h-[70vh] bg-gray-100 flex items-center justify-center overflow-hidden border-b border-royal-blue/10">
-        <img 
-          src="https://images.unsplash.com/photo-1523381294911-8d3cead13475?q=80&w=2070&auto=format&fit=crop" 
-          alt="ACM Minimalist Apparel" 
+        <img
+          src="https://images.unsplash.com/photo-1523381294911-8d3cead13475?q=80&w=2070&auto=format&fit=crop"
+          alt="ACM Minimalist Apparel"
           className="absolute inset-0 w-full h-full object-cover opacity-90 object-center"
         />
         <div className="absolute inset-0 bg-canvas/30 backdrop-blur-[2px]"></div>
-        
         <div className="relative z-10 text-center px-6 max-w-4xl mx-auto flex flex-col items-center">
           <div className="w-16 h-[1px] bg-gold mb-6"></div>
           <h2 className="font-serif text-3xl md:text-5xl font-bold text-royal-blue tracking-wider leading-snug mb-4">
@@ -115,7 +66,6 @@ export default function StoreFront() {
 
       {/* Shopping Area */}
       <section className="max-w-7xl mx-auto px-6 py-20 flex flex-col md:flex-row gap-16">
-        
         {/* Sidebar Filter */}
         <aside className="w-full md:w-64 shrink-0">
           <h3 className="font-serif text-2xl font-bold mb-8 text-royal-blue border-b border-royal-blue/10 pb-4">
@@ -162,11 +112,7 @@ export default function StoreFront() {
 
                   {/* Image */}
                   <div className="aspect-[4/5] overflow-hidden mb-6 bg-gray-50 relative">
-                    <img 
-                      src={product.image_url} 
-                      alt={product.name} 
-                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out"
-                    />
+                    <img src={product.image_url} alt={product.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out" />
                   </div>
 
                   {/* Content */}
@@ -177,22 +123,15 @@ export default function StoreFront() {
                     <p className="text-xs text-gray-600 leading-relaxed mb-8 flex-grow">
                       {product.description}
                     </p>
-                    
                     <div className="flex items-center justify-between border-t border-royal-blue/10 pt-4 mt-auto">
-                      <span className="font-serif text-lg font-bold text-royal-blue">
-                        ₹{product.price}
-                      </span>
-                      <button 
-                        onClick={() => handleCheckout(product)}
-                        className="bg-royal-blue text-white px-6 py-2 text-xs font-bold uppercase tracking-widest hover:bg-gold hover:text-royal-blue transition-colors duration-300"
-                      >
+                      <span className="font-serif text-lg font-bold text-royal-blue">₹{product.price}</span>
+                      <button onClick={() => handleAddToCart(product)} className="bg-royal-blue text-white px-6 py-2 text-xs font-bold uppercase tracking-widest hover:bg-gold hover:text-royal-blue transition-colors duration-300">
                         Add to Cart
                       </button>
                     </div>
                   </div>
                 </div>
               ))}
-              
               {products.length === 0 && !loading && (
                 <div className="col-span-full text-center py-32 text-royal-blue/50 font-serif text-lg">
                   The archive is currently empty.

@@ -4,6 +4,7 @@ import Script from 'next/script';
 import Link from 'next/link';
 import { ShoppingCart, User } from 'lucide-react';
 import './globals.css';
+import { CartProvider } from '@/app/contexts/CartContext';
 
 const playfair = Playfair_Display({ 
   subsets: ['latin'],
@@ -59,7 +60,9 @@ export default function RootLayout({
 
         {/* Main Content */}
         <div className="flex-grow">
-          {children}
+        <CartProvider>
+        {children}
+      </CartProvider>
         </div>
 
         {/* Footer */}
@@ -76,10 +79,7 @@ export default function RootLayout({
           </div>
         </footer>
         
-        <Script 
-          src="https://checkout.razorpay.com/v1/checkout.js" 
-          strategy="lazyOnload" 
-        />
+        
       </body>
     </html>
   );

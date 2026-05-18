@@ -1,97 +1,118 @@
 'use client';
 
-import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useState, useEffect } from 'react';
+import ProductForm from '@/app/components/ProductForm';
+import ProductCard from '@/app/components/ProductCard';
+import { getAllProducts, deleteProduct } from '@/app/api/v1/products/services/productService';
+
+type Product = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image_url: string;
+  stock?: number;
+};
 
 export default function AdminPage() {
-  const [newName, setNewName] = useState('');
-  const [newDesc, setNewDesc] = useState('');
-  const [newPrice, setNewPrice] = useState('');
-  const [newImg, setNewImg] = useState('');
+  // ----- State -------------------------------------------------
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Product | null>(null);
 
-  const handleAddProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newName || !newPrice) return;
-    
-    const { data, error } = await supabase.from('products').insert([
-      {
-        name: newName,
-        description: newDesc,
-        price: Number(newPrice),
-        image_url: newImg || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=800&auto=format&fit=crop',
-        stock: 100
-      }
-    ]).select();
+  // ----- Helpers ------------------------------------------------
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const data = await getAllProducts();
+      setProducts(data ?? []);
+    } catch (err) {
+      console.error(err);
+    }
+    setLoading(false);
+  };
 
-    if (error) {
-      console.error('Insert error:', error);
-      alert('Failed to add product');
-    } else {
-      setNewName('');
-      setNewDesc('');
-      setNewPrice('');
-      setNewImg('');
-      alert('Product successfully injected into the Archive.');
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this product?')) return;
+    try {
+      await deleteProduct(id);
+      await fetchProducts();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete product');
     }
   };
 
+  // ----- Load once ------------------------------------------------
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  // ----- Render -------------------------------------------------
   return (
     <main className="max-w-7xl mx-auto px-6 py-24">
-      <div className="bg-canvas border border-royal-blue p-10 relative max-w-4xl mx-auto">
-        <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-gold"></div>
-        <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-gold"></div>
-        <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-gold"></div>
-        <div className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-gold"></div>
+      <h2 className="font-serif text-3xl font-bold text-royal-blue mb-10 text-center uppercase tracking-widest">
+        Product Management
+      </h2>
 
-        <h2 className="font-serif text-3xl font-bold mb-10 text-center uppercase tracking-widest text-royal-blue">
-          Archive Administration
-        </h2>
-        <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="flex flex-col gap-3">
-            <label className="text-xs font-bold uppercase tracking-widest text-royal-blue">Nomenclature</label>
-            <input 
-              type="text" 
-              value={newName} 
-              onChange={e => setNewName(e.target.value)}
-              className="bg-transparent border-b border-royal-blue/30 px-2 py-3 focus:border-gold outline-none transition-colors rounded-none"
-              required
-            />
+      {/* ----- Product List ----- */}
+      <section className="mb-20">
+        <h3 className="text-xl font-bold uppercase tracking-widest text-royal-blue mb-8 border-b border-royal-blue/10 pb-4">
+          Existing Products
+        </h3>
+
+        {loading ? (
+          <p className="text-royal-blue/60 uppercase tracking-widest text-sm font-bold text-center py-10">Loading Products...</p>
+        ) : products.length === 0 ? (
+          <p className="text-royal-blue/60 uppercase tracking-widest text-sm font-bold text-center py-10">No products found.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {products.map(p => (
+              <div key={p.id} className="flex flex-col gap-4">
+                <ProductCard
+                  product={p}
+                  onAddToCart={() => {
+                    /* Admin page does not use cart – ignore */
+                  }}
+                />
+                <div className="flex gap-4 justify-center">
+                  <button
+                    onClick={() => {
+                      setEditing(p);
+                      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                    }}
+                    className="text-gold uppercase tracking-widest text-xs font-bold hover:text-royal-blue transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <span className="text-royal-blue/30">|</span>
+                  <button
+                    onClick={() => handleDelete(p.id)}
+                    className="text-red-500/80 uppercase tracking-widest text-xs font-bold hover:text-red-500 transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="flex flex-col gap-3">
-            <label className="text-xs font-bold uppercase tracking-widest text-royal-blue">Value (₹)</label>
-            <input 
-              type="number" 
-              value={newPrice} 
-              onChange={e => setNewPrice(e.target.value)}
-              className="bg-transparent border-b border-royal-blue/30 px-2 py-3 focus:border-gold outline-none transition-colors rounded-none"
-              required
-            />
-          </div>
-          <div className="flex flex-col gap-3 md:col-span-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-royal-blue">Details</label>
-            <textarea 
-              value={newDesc} 
-              onChange={e => setNewDesc(e.target.value)}
-              className="bg-transparent border-b border-royal-blue/30 px-2 py-3 focus:border-gold outline-none transition-colors rounded-none h-20 resize-none"
-            />
-          </div>
-          <div className="flex flex-col gap-3 md:col-span-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-royal-blue">Visual Reference (URL)</label>
-            <input 
-              type="url" 
-              value={newImg} 
-              onChange={e => setNewImg(e.target.value)}
-              placeholder="https://..."
-              className="bg-transparent border-b border-royal-blue/30 px-2 py-3 focus:border-gold outline-none transition-colors rounded-none"
-            />
-          </div>
-          <div className="md:col-span-2 flex justify-center mt-6">
-            <button type="submit" className="bg-royal-blue text-white px-12 py-4 text-xs font-bold uppercase tracking-widest hover:bg-gold hover:text-royal-blue transition-colors duration-300">
-              Inject into Archive
-            </button>
-          </div>
-        </form>
-      </div>
+        )}
+      </section>
+
+      {/* ----- Add / Edit Form ----- */}
+      <section>
+        <h3 className="text-xl font-bold uppercase tracking-widest text-royal-blue mb-8 text-center">
+          {editing ? 'Edit Product' : 'Add New Product'}
+        </h3>
+
+        <ProductForm
+          product={editing ?? undefined}
+          onSaved={async () => {
+            setEditing(null);
+            await fetchProducts();
+          }}
+        />
+      </section>
     </main>
   );
 }

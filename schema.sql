@@ -38,6 +38,17 @@ CREATE POLICY "Public insert access for products (Demo Only)"
 ON products FOR INSERT
 WITH CHECK (true);
 
+-- Allow public update access to products (Demo Only)
+CREATE POLICY "Public update access for products (Demo Only)"
+ON products FOR UPDATE
+USING (true)
+WITH CHECK (true);
+
+-- Allow public delete access to products (Demo Only)
+CREATE POLICY "Public delete access for products (Demo Only)"
+ON products FOR DELETE
+USING (true);
+
 -- Allow backend service to manage orders (since orders are created/updated in the backend route handlers using service_role or similar)
 -- Actually, we'll probably use service_role key for backend operations. 
 -- For client reads, maybe we don't need it.
