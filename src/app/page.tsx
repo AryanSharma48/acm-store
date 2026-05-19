@@ -16,7 +16,7 @@ type Product = {
 };
 
 export default function StoreFront() {
-  const { addItem } = useCart();
+  const { items, addItem, decreaseQuantity } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +42,6 @@ export default function StoreFront() {
       price: product.price,
       image_url: product.image_url,
     });
-    alert('Added to cart');
   };
 
   return (
@@ -57,7 +56,7 @@ export default function StoreFront() {
         <div className="absolute inset-0 bg-canvas/30 backdrop-blur-[2px]"></div>
         <div className="relative z-10 text-center px-6 max-w-4xl mx-auto flex flex-col items-center">
           <div className="w-16 h-[1px] bg-gold mb-6"></div>
-          <h2 className="font-serif text-3xl md:text-5xl font-bold text-royal-blue tracking-wider leading-snug mb-4">
+          <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold text-royal-blue tracking-wider leading-snug mb-4">
             CURATED EXCLUSIVES FOR <br/> THE ELITE ACADEMIC
           </h2>
           <div className="w-16 h-[1px] bg-gold mt-2"></div>
@@ -65,32 +64,9 @@ export default function StoreFront() {
       </section>
 
       {/* Shopping Area */}
-      <section className="max-w-7xl mx-auto px-6 py-20 flex flex-col md:flex-row gap-16">
-        {/* Sidebar Filter */}
-        <aside className="w-full md:w-64 shrink-0">
-          <h3 className="font-serif text-2xl font-bold mb-8 text-royal-blue border-b border-royal-blue/10 pb-4">
-            Curriculum
-          </h3>
-          <ul className="space-y-6">
-            {['Apparel', 'Accessories', 'Stationery'].map((category) => (
-              <li key={category} className="flex items-center gap-4 group cursor-pointer">
-                <input type="checkbox" className="gold-checkbox" />
-                <span className="text-sm font-medium tracking-wide text-royal-blue/80 group-hover:text-royal-blue transition-colors uppercase">
-                  {category}
-                </span>
-              </li>
-            ))}
-            <li className="flex items-center gap-4 group cursor-pointer pt-6 border-t border-royal-blue/10">
-              <input type="checkbox" className="gold-checkbox" />
-              <span className="text-sm font-bold tracking-wide text-gold group-hover:text-gold/80 transition-colors uppercase">
-                Limited Editions
-              </span>
-            </li>
-          </ul>
-        </aside>
-
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 md:py-20">
         {/* Product Grid */}
-        <div className="flex-grow">
+        <div className="w-full">
           <div className="flex justify-between items-end mb-8 border-b border-royal-blue/10 pb-4">
             <h3 className="font-serif text-2xl font-bold text-royal-blue">Available Collections</h3>
             <span className="text-xs uppercase tracking-widest font-bold text-royal-blue/50">{products.length} Items</span>
@@ -101,7 +77,7 @@ export default function StoreFront() {
               <div className="w-8 h-8 border-2 border-royal-blue border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-10">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-10">
               {products.map((product) => (
                 <div key={product.id} className="group flex flex-col bg-canvas border border-royal-blue relative p-4 transition-all duration-500 hover:shadow-[0_10px_30px_rgba(10,25,47,0.08)]">
                   {/* Corner accents */}
@@ -111,23 +87,35 @@ export default function StoreFront() {
                   <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-gold z-10 translate-x-[1px] translate-y-[1px]"></div>
 
                   {/* Image */}
-                  <div className="aspect-[4/5] overflow-hidden mb-6 bg-gray-50 relative">
+                  <div className="aspect-[4/5] overflow-hidden mb-3 sm:mb-6 bg-gray-50 relative">
                     <img src={product.image_url} alt={product.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700 ease-out" />
                   </div>
 
                   {/* Content */}
                   <div className="flex flex-col flex-grow px-2 pb-2 text-center">
-                    <h4 className="text-sm font-bold uppercase tracking-widest text-black mb-3">
+                    <h4 className="text-[10px] sm:text-sm font-bold uppercase tracking-widest text-black mb-1 sm:mb-3 line-clamp-1">
                       {product.name}
                     </h4>
-                    <p className="text-xs text-gray-600 leading-relaxed mb-8 flex-grow">
+                    <p className="text-[10px] sm:text-xs text-gray-600 leading-relaxed mb-4 sm:mb-8 flex-grow line-clamp-2 sm:line-clamp-none">
                       {product.description}
                     </p>
-                    <div className="flex items-center justify-between border-t border-royal-blue/10 pt-4 mt-auto">
-                      <span className="font-serif text-lg font-bold text-royal-blue">₹{product.price}</span>
-                      <button onClick={() => handleAddToCart(product)} className="bg-royal-blue text-white px-6 py-2 text-xs font-bold uppercase tracking-widest hover:bg-gold hover:text-royal-blue transition-colors duration-300">
-                        Add to Cart
-                      </button>
+                    <div className="flex items-center justify-between border-t border-royal-blue/10 pt-3 sm:pt-4 mt-auto min-h-[40px] sm:min-h-[48px] gap-2">
+                      <span className="font-serif text-sm sm:text-lg font-bold text-royal-blue">₹{product.price}</span>
+                      
+                      {(() => {
+                        const cartItem = items.find(i => i.id === product.id);
+                        return cartItem ? (
+                          <div className="flex items-center border border-royal-blue h-[28px] sm:h-[32px] w-[90px] sm:w-[100px]">
+                            <button onClick={() => decreaseQuantity(product.id)} className="flex-1 h-full text-royal-blue hover:bg-royal-blue/10 transition-colors font-bold flex items-center justify-center">-</button>
+                            <span className="flex-1 h-full flex items-center justify-center text-[10px] sm:text-xs font-bold text-royal-blue border-x border-royal-blue/10">{cartItem.quantity}</span>
+                            <button onClick={() => handleAddToCart(product)} className="flex-1 h-full text-royal-blue hover:bg-royal-blue/10 transition-colors font-bold flex items-center justify-center">+</button>
+                          </div>
+                        ) : (
+                          <button onClick={() => handleAddToCart(product)} className="bg-royal-blue text-white px-2 sm:px-6 py-1 sm:py-2 text-[8px] sm:text-xs font-bold uppercase tracking-widest hover:bg-gold hover:text-royal-blue transition-colors duration-300 h-[28px] sm:h-[32px] whitespace-nowrap">
+                            Add to Cart
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

@@ -48,10 +48,10 @@ export default function CartPage() {
               <span>₹{totalAmount}</span>
             </div>
             
-            <div className="flex gap-4">
+            <div className="flex flex-col-reverse sm:flex-row gap-4 w-full sm:w-auto">
               <button 
                 onClick={clearCart}
-                className="px-6 py-3 text-xs font-bold uppercase tracking-widest text-royal-blue/60 hover:text-red-500 transition-colors"
+                className="px-6 py-3 text-xs font-bold uppercase tracking-widest text-royal-blue/60 hover:text-red-500 border border-royal-blue/10 sm:border-none transition-colors"
               >
                 Clear Cart
               </button>
