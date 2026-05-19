@@ -4,10 +4,11 @@ export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { editProduct, removeProduct, getProducts } from '../controllers/productController';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const products = await getProducts();
-    const product = (products as any[]).find((p) => p.id === params.id);
+    const product = (products as any[]).find((p) => p.id === id);
     if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json(product);
   } catch (err: any) {
@@ -15,19 +16,21 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const payload = await request.json();
-    const updated = await editProduct(params.id, payload);
+    const updated = await editProduct(id, payload);
     return NextResponse.json(updated);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 400 });
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await removeProduct(params.id);
+    const { id } = await params;
+    await removeProduct(id);
     return NextResponse.json({ success: true });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 400 });
