@@ -1,4 +1,6 @@
 // src/app/api/v1/products/route.ts
+export const runtime = 'edge';
+
 import { NextResponse } from 'next/server';
 import { addProduct, getProducts } from './controllers/productController';
 
