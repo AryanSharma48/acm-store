@@ -17,6 +17,7 @@ CREATE TABLE orders (
   razorpay_order_id TEXT UNIQUE NOT NULL,
   amount NUMERIC NOT NULL,
   status TEXT CHECK (status IN ('pending', 'captured', 'failed')) DEFAULT 'pending',
+  user_id UUID, -- Foreign key added later to public.profiles
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -58,3 +59,64 @@ INSERT INTO products (name, description, price, stock, image_url)
 VALUES 
   ('ACM Hoodie', 'Premium quality, ultra-soft ACM branded hoodie perfect for coding sessions.', 1499, 50, 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=800&auto=format&fit=crop'),
   ('ACM T-Shirt', 'Classic 100% cotton T-shirt featuring the ACM logo.', 699, 100, 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=800&auto=format&fit=crop');
+
+
+CREATE TABLE public.profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT,
+  email TEXT,
+  phone TEXT,
+  address TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Update orders to reference profiles
+ALTER TABLE orders ADD CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
+
+
+CREATE TABLE public.admin_users (
+  email TEXT PRIMARY KEY,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Seed your initial admin email here!
+-- INSERT INTO public.admin_users (email) VALUES ('your_email@example.com');
+
+-- Google Auth Trigger (Auto-create profile on signup)
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, name, email)
+  VALUES (
+    new.id,
+    new.raw_user_meta_data->>'full_name',
+    new.email
+  );
+  RETURN new;
+END;
+$$;
+
+-- Trigger to call the function every time a user is created
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+--Security Policies (RLS) for new tables
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
+
+-- Users can only read and update their own profile
+CREATE POLICY "Users can view own profile" 
+ON public.profiles FOR SELECT 
+USING (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile" 
+ON public.profiles FOR UPDATE 
+USING (auth.uid() = id);
+
+-- Admins table is strictly internal, so no public policies.
+-- The backend Service Role will query it.
+

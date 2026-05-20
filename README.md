@@ -1,6 +1,6 @@
-# ACM Store
+# acmstore
 
-ACM Store is an online store for merchandise of ACM MUJ.
+acmstore is a Node.js application. Add a brief description of its purpose and what problem it solves.
 
 ## Installation
 
@@ -20,6 +20,7 @@ You can run the following scripts:
 
 This project uses the following dependencies:
 
+- @supabase/ssr
 - @supabase/supabase-js
 - lucide-react
 - next
@@ -32,20 +33,33 @@ This project uses the following dependencies:
 Project structure:
 
 ```
+├── __tests__
+│   └── cart.test.tsx
+├── .github
+│   └── workflows
+│       └── ci.yml
 ├── .gitignore
+├── .swc
+│   └── plugins
+│       └── windows_x86_64_24.0.0
 ├── AGENTS.md
+├── ARCHITECTURE.md
 ├── CLAUDE.md
 ├── eslint.config.mjs
+├── jest.config.ts
+├── jest.setup.ts
 ├── next.config.ts
 ├── package-lock.json
 ├── package.json
 ├── postcss.config.mjs
+├── README.md
 ├── schema.sql
 ├── src
 │   ├── app
 │   │   ├── about
 │   │   ├── admin
 │   │   ├── api
+│   │   ├── auth
 │   │   ├── cart
 │   │   ├── components
 │   │   ├── contexts
@@ -54,11 +68,14 @@ Project structure:
 │   │   ├── layout.tsx
 │   │   ├── page.tsx
 │   │   ├── perks
+│   │   ├── profile
 │   │   └── services
 │   ├── config
 │   │   └── index.ts
-│   └── lib
-│       └── supabase.ts
+│   ├── lib
+│   │   ├── supabase
+│   │   └── supabase.ts
+│   └── middleware.ts
 └── tsconfig.json
 ```
 
