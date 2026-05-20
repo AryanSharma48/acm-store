@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, User, Menu, X, LogIn } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, LogIn, Package } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useCart } from '@/app/contexts/CartContext';
 import { createClient } from '@/lib/supabase/client';
@@ -29,7 +29,7 @@ export default function Header() {
           .from('admin_users')
           .select('email')
           .eq('email', session.user.email)
-          .single();
+          .maybeSingle();
           
         if (adminData) setIsAdmin(true);
       }
@@ -64,19 +64,12 @@ export default function Header() {
     e.preventDefault();
     if (!user) {
       handleLogin();
-    } else if (isAdmin) {
-      router.push('/admin');
     } else {
       router.push('/profile');
     }
   };
 
-  const handleCartClick = (e: React.MouseEvent) => {
-    if (!user) {
-      e.preventDefault();
-      handleLogin();
-    }
-  };
+
 
   return (
     <header className="w-full border-b border-royal-blue/10 bg-canvas sticky top-0 z-50">
@@ -86,7 +79,7 @@ export default function Header() {
           href="/"
           className="font-serif text-xl sm:text-2xl font-bold text-royal-blue tracking-wide hover:text-gold transition-colors duration-300"
         >
-          ACM Merch Collective
+          ACM STORE
         </Link>
 
         {/* Navigation & Icons */}
@@ -107,24 +100,33 @@ export default function Header() {
             <button 
               onClick={handleProfileClick}
               className="text-gold hover:text-royal-blue transition-colors duration-300" 
-              title={user ? (isAdmin ? "Admin Archive" : "Profile") : "Sign In"}
+              title={user ? "Profile" : "Sign In"}
             >
               {user ? <User size={22} strokeWidth={1.5} /> : <LogIn size={22} strokeWidth={1.5} />}
             </button>
             
-            <Link 
-              href="/cart" 
-              onClick={handleCartClick}
-              className="relative text-gold hover:text-royal-blue transition-colors duration-300" 
-              title="Your Requisition"
-            >
-              <ShoppingCart size={22} strokeWidth={1.5} />
-              {totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 bg-royal-blue text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">
-                  {totalItems}
-                </span>
-              )}
-            </Link>
+            {isAdmin ? (
+              <Link 
+                href="/admin/products" 
+                className="relative text-gold hover:text-royal-blue transition-colors duration-300" 
+                title="Product Management"
+              >
+                <Package size={22} strokeWidth={1.5} />
+              </Link>
+            ) : (
+              <Link 
+                href="/cart" 
+                className="relative text-gold hover:text-royal-blue transition-colors duration-300" 
+                title="Your Requisition"
+              >
+                <ShoppingCart size={22} strokeWidth={1.5} />
+                {totalItems > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-royal-blue text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                    {totalItems}
+                  </span>
+                )}
+              </Link>
+            )}
             
             <button 
               className="md:hidden text-royal-blue hover:text-gold transition-colors duration-300"

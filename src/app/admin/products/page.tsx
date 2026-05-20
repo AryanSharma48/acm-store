@@ -66,16 +66,18 @@ export default function AdminPage() {
         ) : products.length === 0 ? (
           <p className="text-royal-blue/60 uppercase tracking-widest text-sm font-bold text-center py-10">No products found.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
             {products.map(p => (
-              <div key={p.id} className="flex flex-col gap-4">
-                <ProductCard
-                  product={p}
-                  onAddToCart={() => {
-                    /* Admin page does not use cart – ignore */
-                  }}
-                />
-                <div className="flex gap-4 justify-center">
+              <div key={p.id} className="flex flex-col gap-4 h-full">
+                <div className="flex-grow">
+                  <ProductCard
+                    product={p}
+                    onAddToCart={() => {
+                      /* Admin page does not use cart – ignore */
+                    }}
+                  />
+                </div>
+                <div className="flex gap-4 justify-center mt-auto pb-4">
                   <button
                     onClick={() => {
                       setEditing(p);
