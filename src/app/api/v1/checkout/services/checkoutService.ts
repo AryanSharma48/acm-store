@@ -14,7 +14,7 @@ const razorpay = new Razorpay({
   key_secret: config.razorpayKeySecret,
 });
 
-export const createOrder = async (amount: number, productId: string) => {
+export const createOrder = async (amount: number, productId: string, userId: string) => {
   const amountInPaisa = Math.round(amount * 100);
   const options = {
     amount: amountInPaisa,
@@ -22,13 +22,14 @@ export const createOrder = async (amount: number, productId: string) => {
     receipt: `receipt_${Date.now()}`,
   };
   const order = await razorpay.orders.create(options);
-  // insert order record referencing product
+  // insert order record referencing product and user
   const { error } = await supabaseAdmin.from('orders').insert([
     {
       razorpay_order_id: order.id,
       amount,
       status: 'pending',
       product_id: productId,
+      user_id: userId,
     },
   ]);
   if (error) throw error;

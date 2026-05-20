@@ -2,14 +2,81 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, User, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { ShoppingCart, User, Menu, X, LogIn } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useCart } from '@/app/contexts/CartContext';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { items } = useCart();
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const router = useRouter();
+  
+  const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [supabase] = useState(() => createClient());
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        
+        // Check if admin
+        const { data: adminData } = await supabase
+          .from('admin_users')
+          .select('email')
+          .eq('email', session.user.email)
+          .single();
+          
+        if (adminData) setIsAdmin(true);
+      }
+    };
+    
+    checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        // Would normally re-check admin here, but reload is usually fine for login
+      } else {
+        setUser(null);
+        setIsAdmin(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogin = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      }
+    });
+  };
+
+  const handleProfileClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!user) {
+      handleLogin();
+    } else if (isAdmin) {
+      router.push('/admin');
+    } else {
+      router.push('/profile');
+    }
+  };
+
+  const handleCartClick = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      handleLogin();
+    }
+  };
 
   return (
     <header className="w-full border-b border-royal-blue/10 bg-canvas sticky top-0 z-50">
@@ -36,10 +103,21 @@ export default function Header() {
             </Link>
           </div>
           <div className="flex gap-4 sm:gap-6 items-center">
-            <Link href="/admin" className="text-gold hover:text-royal-blue transition-colors duration-300" title="Admin Archive">
-              <User size={22} strokeWidth={1.5} />
-            </Link>
-            <Link href="/cart" className="relative text-gold hover:text-royal-blue transition-colors duration-300" title="Your Requisition">
+            
+            <button 
+              onClick={handleProfileClick}
+              className="text-gold hover:text-royal-blue transition-colors duration-300" 
+              title={user ? (isAdmin ? "Admin Archive" : "Profile") : "Sign In"}
+            >
+              {user ? <User size={22} strokeWidth={1.5} /> : <LogIn size={22} strokeWidth={1.5} />}
+            </button>
+            
+            <Link 
+              href="/cart" 
+              onClick={handleCartClick}
+              className="relative text-gold hover:text-royal-blue transition-colors duration-300" 
+              title="Your Requisition"
+            >
               <ShoppingCart size={22} strokeWidth={1.5} />
               {totalItems > 0 && (
                 <span className="absolute -top-2 -right-2 bg-royal-blue text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">
@@ -47,6 +125,7 @@ export default function Header() {
                 </span>
               )}
             </Link>
+            
             <button 
               className="md:hidden text-royal-blue hover:text-gold transition-colors duration-300"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
