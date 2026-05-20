@@ -83,8 +83,9 @@ export default function ProductForm({ product, onSaved }: Props) {
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="flex flex-col gap-3">
-          <label className="text-xs font-bold uppercase tracking-widest text-royal-blue">Product Name</label>
+          <label htmlFor="product-name" className="text-xs font-bold uppercase tracking-widest text-royal-blue">Product Name</label>
           <input 
+            id="product-name"
             type="text" 
             value={newName} 
             onChange={e => setNewName(e.target.value)}
@@ -93,8 +94,9 @@ export default function ProductForm({ product, onSaved }: Props) {
           />
         </div>
         <div className="flex flex-col gap-3">
-          <label className="text-xs font-bold uppercase tracking-widest text-royal-blue">Price (₹)</label>
+          <label htmlFor="product-price" className="text-xs font-bold uppercase tracking-widest text-royal-blue">Price (₹)</label>
           <input 
+            id="product-price"
             type="number" 
             value={newPrice} 
             onChange={e => setNewPrice(e.target.value)}
@@ -103,16 +105,18 @@ export default function ProductForm({ product, onSaved }: Props) {
           />
         </div>
         <div className="flex flex-col gap-3 md:col-span-2">
-          <label className="text-xs font-bold uppercase tracking-widest text-royal-blue">Description</label>
+          <label htmlFor="product-desc" className="text-xs font-bold uppercase tracking-widest text-royal-blue">Description</label>
           <textarea 
+            id="product-desc"
             value={newDesc} 
             onChange={e => setNewDesc(e.target.value)}
             className="bg-transparent border-b border-royal-blue/30 px-2 py-3 focus:border-gold outline-none transition-colors rounded-none h-20 resize-none"
           />
         </div>
         <div className="flex flex-col gap-3 md:col-span-2">
-          <label className="text-xs font-bold uppercase tracking-widest text-royal-blue">Image URL</label>
+          <label htmlFor="product-image" className="text-xs font-bold uppercase tracking-widest text-royal-blue">Image URL</label>
           <input 
+            id="product-image"
             type="url" 
             value={newImg} 
             onChange={e => setNewImg(e.target.value)}
