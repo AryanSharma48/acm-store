@@ -1,7 +1,7 @@
 // src/app/contexts/CartContext.tsx
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 type CartItem = {
   id: string;
@@ -24,6 +24,25 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('acmstore_cart');
+    if (saved) {
+      try {
+        setItems(JSON.parse(saved));
+      } catch (err) {
+        console.error('Failed to parse cart from local storage', err);
+      }
+    }
+    setIsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem('acmstore_cart', JSON.stringify(items));
+    }
+  }, [items, isLoaded]);
 
   const addItem = (item: Omit<CartItem, 'quantity'>) => {
     setItems((prev) => {

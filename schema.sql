@@ -117,6 +117,10 @@ CREATE POLICY "Users can update own profile"
 ON public.profiles FOR UPDATE 
 USING (auth.uid() = id);
 
+-- Allow users to check if their own email is in the admin table
+CREATE POLICY "Users can check admin status" 
+ON public.admin_users FOR SELECT 
+USING (auth.jwt() ->> 'email' = email);
+
 -- Admins table is strictly internal, so no public policies.
 -- The backend Service Role will query it.
-

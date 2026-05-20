@@ -42,7 +42,7 @@ export async function updateSession(request: NextRequest) {
       .from('admin_users')
       .select('email')
       .eq('email', user.email)
-      .single()
+      .maybeSingle()
 
     if (!adminUser) {
       // Not an admin, kick them back to home
