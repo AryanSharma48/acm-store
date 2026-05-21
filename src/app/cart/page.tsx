@@ -6,12 +6,14 @@ import CartItemComponent from '@/app/components/CartItem';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { LogIn } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function CartPage() {
   const { items, totalAmount, removeItem, clearCart } = useCart();
   const [supabase] = useState(() => createClient());
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const checkUser = async () => {
@@ -121,7 +123,7 @@ export default function CartPage() {
               </button>
               <button 
                 className="bg-royal-blue text-white px-10 py-3 text-xs font-bold uppercase tracking-widest hover:bg-gold hover:text-royal-blue transition-colors duration-300"
-                onClick={() => alert("Checkout flow is not fully implemented yet!")}
+                onClick={() => router.push('/checkout')}
               >
                 Proceed to Checkout
               </button>
