@@ -12,58 +12,32 @@
 
 import { POST } from './route';
 
+// ─── Module-scoped Mock References (prefixed with "mock" for Jest hoisting) ──
+const mockCreateOrder = jest.fn();
+const mockGetUser = jest.fn().mockResolvedValue({
+  data: { user: { id: 'user-123' } },
+  error: null,
+});
+const mockAdminFrom = jest.fn();
+
 // ─── Mock: Razorpay SDK ───────────────────────────────────────────────────────
 jest.mock('razorpay', () => {
-  const mockCreate = jest.fn();
-  const MockRazorpay = jest.fn().mockImplementation(() => ({
-    orders: { create: mockCreate },
+  return jest.fn().mockImplementation(() => ({
+    orders: {
+      create: (...args: any[]) => mockCreateOrder(...args),
+    },
   }));
-  // Attach mockCreate so tests can access it
-  (MockRazorpay as any).__mockCreate = mockCreate;
-  return MockRazorpay;
 });
 
 // ─── Mock: Supabase admin client ──────────────────────────────────────────────
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
-    from: jest.fn(),
+    from: (...args: any[]) => mockAdminFrom(...args),
     auth: {
-      getUser: jest.fn().mockResolvedValue({
-        data: { user: { id: 'user-123' } },
-        error: null,
-      }),
+      getUser: (...args: any[]) => mockGetUser(...args),
     },
   })),
 }));
-
-// ─── Mock: Supabase SSR (used for Bearer-token validation in the route) ────────
-jest.mock('@/lib/supabase/server', () => ({
-  createClient: jest.fn(() => ({
-    auth: { getUser: jest.fn() },
-  })),
-}));
-
-// Lazy accessors — retrieve live mock references after hoisting
-const getRazorpayMock = () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const RazorpayMock = require('razorpay') as any;
-  return {
-    MockRazorpay: RazorpayMock,
-    mockCreateOrder: RazorpayMock.__mockCreate as jest.Mock,
-  };
-};
-
-const getSupabaseMock = () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { createClient } = require('@supabase/supabase-js') as any;
-  return createClient() as { from: jest.Mock; auth: { getUser: jest.Mock } };
-};
-
-const getServerSupabaseMock = () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { createClient } = require('@/lib/supabase/server') as any;
-  return createClient() as { auth: { getUser: jest.Mock } };
-};
 
 
 /** Build a minimal Next.js Request object with a JSON body and optional Authorization header. */
@@ -196,9 +170,8 @@ describe('POST /api/checkout', () => {
       });
 
       // DB: product lookup returns price from DB
-      const mockSingle  = jest.fn().mockResolvedValue({ data: { id: 'prod-1', price: 500, stock: 10 }, error: null });
-      const mockEqProd  = jest.fn().mockReturnValue({ single: mockSingle });
-      const mockSelProd = jest.fn().mockReturnValue({ eq: mockEqProd });
+      const mockInProd  = jest.fn().mockResolvedValue({ data: [{ id: 'prod-1', name: 'Product 1', price: 500, stock: 10 }], error: null });
+      const mockSelProd = jest.fn().mockReturnValue({ in: mockInProd });
 
       // DB: order insert succeeds
       const mockSelectOrder  = jest.fn().mockResolvedValue({ data: [{ id: 'order-abc' }], error: null });
@@ -258,9 +231,8 @@ describe('POST /api/checkout', () => {
 
     it('should return 500 when Razorpay SDK throws an unexpected error', async () => {
       // Arrange
-      const mockSingle = jest.fn().mockResolvedValue({ data: { id: 'prod-1', price: 500, stock: 10 }, error: null });
-      const mockEq     = jest.fn().mockReturnValue({ single: mockSingle });
-      const mockSel    = jest.fn().mockReturnValue({ eq: mockEq });
+      const mockIn     = jest.fn().mockResolvedValue({ data: [{ id: 'prod-1', name: 'Product 1', price: 500, stock: 10 }], error: null });
+      const mockSel    = jest.fn().mockReturnValue({ in: mockIn });
       mockAdminFrom.mockImplementation(() => ({ select: mockSel }));
 
       mockCreateOrder.mockRejectedValue(new Error('Razorpay network timeout'));
@@ -273,10 +245,9 @@ describe('POST /api/checkout', () => {
     });
 
     it('should return 404 when a requested product ID does not exist in the database', async () => {
-      // Arrange — DB returns null for the product lookup
-      const mockSingle = jest.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } });
-      const mockEq     = jest.fn().mockReturnValue({ single: mockSingle });
-      const mockSel    = jest.fn().mockReturnValue({ eq: mockEq });
+      // Arrange — DB returns empty list for the product lookup
+      const mockIn     = jest.fn().mockResolvedValue({ data: [], error: null });
+      const mockSel    = jest.fn().mockReturnValue({ in: mockIn });
       mockAdminFrom.mockImplementation(() => ({ select: mockSel }));
 
       // Act

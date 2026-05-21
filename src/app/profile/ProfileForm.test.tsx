@@ -240,11 +240,9 @@ describe('ProfileForm Component', () => {
       // Arrange
       const user = userEvent.setup();
 
-      // jsdom does not support navigation — stub href via property descriptor
-      Object.defineProperty(window, 'location', {
-        value: { href: '' },
-        writable: true,
-      });
+      // jsdom does not support navigation — delete and stub location on global window
+      delete (global as any).window.location;
+      (global as any).window.location = { href: '' } as any;
 
       render(<ProfileForm profile={FULL_PROFILE} />);
 
