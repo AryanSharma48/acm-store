@@ -3,11 +3,14 @@
 //
 // Accepts: { items: CartItem[], shippingDetails: ShippingDetails }
 // Behaviour:
-//   1. Authenticates the calling user via their Supabase session (Bearer token).
-//   2. Re-prices every cart item from the `products` DB table (prevents price spoofing).
-//   3. Creates a Razorpay order for the server-calculated total.
-//   4. Inserts a `pending` order row in the `orders` table linked to the user.
-//   5. Returns the Razorpay order details — the payment modal is NOT launched here.
+//   1. Guards against unconfigured Razorpay credentials (returns 503 with
+//      error code RAZORPAY_NOT_CONFIGURED so the frontend can show a
+//      user-friendly "integration coming soon" notice).
+//   2. Authenticates the calling user via their Supabase session (Bearer token).
+//   3. Re-prices every cart item from the `products` DB table (prevents price spoofing).
+//   4. Creates a Razorpay order for the server-calculated total.
+//   5. Inserts a `pending` order row in the `orders` table linked to the user.
+//   6. Returns the Razorpay order details — the payment modal is NOT launched here.
 
 import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
@@ -43,19 +46,47 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// ---------------------------------------------------------------------------
-// Razorpay client
-// ---------------------------------------------------------------------------
-const razorpay = new Razorpay({
-  key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID as string,
-  key_secret: process.env.RAZORPAY_KEY_SECRET as string,
-});
+// Razorpay client is intentionally NOT instantiated at module level.
+// Creating it with empty/placeholder keys causes the SDK to emit a
+// 'Using DEFAULT root logger' warning on every server cold-start.
+// Instead it is constructed inside the handler, after the guard that
+// confirms the keys are properly configured.
 
 // ---------------------------------------------------------------------------
 // Route handler
 // ---------------------------------------------------------------------------
 export async function POST(req: Request) {
   try {
+    // ------------------------------------------------------------------
+    // 0. Guard — Razorpay must be configured before anything else.
+    //    Missing or placeholder keys produce a 401 deep inside the SDK
+    //    which would otherwise surface as a confusing 500 to the client.
+    // ------------------------------------------------------------------
+    const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
+
+    const isRazorpayConfigured =
+      razorpayKeyId &&
+      razorpayKeySecret &&
+      !razorpayKeyId.startsWith('your_') &&
+      !razorpayKeySecret.startsWith('your_');
+
+    if (!isRazorpayConfigured) {
+      return NextResponse.json(
+        {
+          error: 'Payment gateway is not yet configured.',
+          code: 'RAZORPAY_NOT_CONFIGURED',
+        },
+        { status: 503 }
+      );
+    }
+
+    // Construct the Razorpay client only after we know the keys are valid.
+    const razorpay = new Razorpay({
+      key_id: razorpayKeyId as string,
+      key_secret: razorpayKeySecret as string,
+    });
+
     // ------------------------------------------------------------------
     // 1. Authenticate — extract the Supabase access token from the
     //    Authorization header so we can identify the user server-side.
