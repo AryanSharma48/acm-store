@@ -41,11 +41,7 @@ export default function RootLayout({
         {/* Footer */}
         <footer className="w-full border-t border-royal-blue/10 bg-canvas py-12 mt-24">
           <div className="max-w-7xl mx-auto px-6 flex flex-col items-center justify-center gap-6">
-            <div className="flex gap-8 text-sm font-medium tracking-wide">
-              <a href="#" className="text-royal-blue hover:text-gold transition-colors duration-300">Contact Us</a>
-              <a href="#" className="text-royal-blue hover:text-gold transition-colors duration-300">Privacy Policy</a>
-              <a href="#" className="text-royal-blue hover:text-gold transition-colors duration-300">Terms of Service</a>
-            </div>
+
             <p className="text-xs text-royal-blue/50 tracking-widest uppercase">
               © {new Date().getFullYear()} MUJ ACM CHAPTER. All rights reserved.
             </p>

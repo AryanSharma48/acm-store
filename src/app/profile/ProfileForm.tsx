@@ -53,8 +53,11 @@ export default function ProfileForm({ profile }: { profile: any }) {
   const [supabase] = useState(() => createClient());
 
   // Editable fields
-  const [phone,    setPhone]    = useState<string>(profile?.phone    ?? '');
-  const [addr, setAddr] = useState(() => parseAddress(profile?.address));
+  const [name, setName] = useState<string>(profile?.name ?? '');
+  const [phone, setPhone] = useState<string>(profile?.phone ?? '');
+  const [chapter, setChapter] = useState<string>(profile?.chapter ?? 'SCHAP');
+  const [position, setPosition] = useState<string>(profile?.position ?? 'Chairperson');
+  const [committee, setCommittee] = useState<string>(profile?.committee ?? 'Events');
 
   // UI state
   const [isSaving,  setIsSaving]  = useState(false);
@@ -62,36 +65,17 @@ export default function ProfileForm({ profile }: { profile: any }) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   // Field-level errors
-  const [phoneErr, setPhoneErr]       = useState('');
-  const [buildingErr, setBuildingErr] = useState('');
-  const [streetErr,   setStreetErr]   = useState('');
-  const [cityErr,     setCityErr]     = useState('');
-  const [stateErr,    setStateErr]    = useState('');
-  const [pinErr,      setPinErr]      = useState('');
-
-  const setAddrField = (key: keyof typeof addr, value: string) => {
-    setAddr((prev) => ({ ...prev, [key]: value }));
-    // Clear that field's error on change
-    if (key === 'building') setBuildingErr('');
-    if (key === 'street')   setStreetErr('');
-    if (key === 'city')     setCityErr('');
-    if (key === 'state')    setStateErr('');
-    if (key === 'pin')      setPinErr('');
-  };
+  const [nameErr, setNameErr] = useState('');
+  const [phoneErr, setPhoneErr] = useState('');
 
   const validate = () => {
     let ok = true;
+    if (!name.trim()) { setNameErr('Name is required.'); ok = false; }
+    else setNameErr('');
+
     if (!phone.trim()) { setPhoneErr('Phone number is required.'); ok = false; }
     else if (!/^\+?[\d\s\-()]{7,15}$/.test(phone)) { setPhoneErr('Invalid phone number.'); ok = false; }
     else setPhoneErr('');
-
-    if (!addr.building.trim()) { setBuildingErr('Required.'); ok = false; } else setBuildingErr('');
-    if (!addr.street.trim())   { setStreetErr('Required.');   ok = false; } else setStreetErr('');
-    if (!addr.city.trim())     { setCityErr('Required.');     ok = false; } else setCityErr('');
-    if (!addr.state.trim())    { setStateErr('Required.');    ok = false; } else setStateErr('');
-    if (!addr.pin.trim())      { setPinErr('Required.');      ok = false; }
-    else if (!/^\d{6}$/.test(addr.pin.trim())) { setPinErr('Enter a valid 6-digit PIN.'); ok = false; }
-    else setPinErr('');
 
     return ok;
   };
@@ -105,7 +89,7 @@ export default function ProfileForm({ profile }: { profile: any }) {
 
     const { error } = await supabase
       .from('profiles')
-      .update({ phone, address: serializeAddress(addr) })
+      .update({ name, phone, chapter, position, committee: position === 'Team Head' ? committee : null })
       .eq('id', profile?.id);
 
     setIsSaving(false);
@@ -128,13 +112,7 @@ export default function ProfileForm({ profile }: { profile: any }) {
 
       {/* ── Read-only identity block ── */}
       <div className="relative bg-royal-blue/[0.03] border border-royal-blue/8 p-5 space-y-3">
-        <div>
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <User size={10} className="text-royal-blue/40" />
-            <span className="text-[10px] font-bold tracking-widest uppercase text-royal-blue/40">Name</span>
-          </div>
-          <p className="text-sm font-semibold text-royal-blue">{profile?.name || '—'}</p>
-        </div>
+
         <div>
           <div className="flex items-center gap-1.5 mb-0.5">
             <Mail size={10} className="text-royal-blue/40" />
@@ -147,102 +125,87 @@ export default function ProfileForm({ profile }: { profile: any }) {
       {/* ── Editable form ── */}
       <form onSubmit={handleSave} noValidate className="space-y-5">
 
-        {/* Phone */}
-        <div>
-          <Label htmlFor="pf-phone">
-            <span className="inline-flex items-center gap-1"><Phone size={9} />Phone Number</span>
-          </Label>
-          <input
-            id="pf-phone" type="tel" value={phone} autoComplete="tel"
-            placeholder="+91 98765 43210"
-            className={inputCls(phoneErr)}
-            onChange={(e) => { setPhone(e.target.value); setPhoneErr(''); }}
-          />
-          <FieldError msg={phoneErr} />
-        </div>
-
-        {/* Delivery Address — header */}
-        <div>
-          <div className="flex items-center gap-1.5 mb-3 pb-2 border-b border-royal-blue/8">
-            <MapPin size={12} className="text-gold" strokeWidth={1.5} />
-            <span className="text-[10px] font-bold tracking-widest uppercase text-royal-blue/50">
-              Delivery Address
-            </span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {/* Name */}
+          <div className="sm:col-span-2">
+            <Label htmlFor="pf-name">
+              <span className="inline-flex items-center gap-1"><User size={9} />Full Name</span>
+            </Label>
+            <input
+              id="pf-name" type="text" value={name} autoComplete="name"
+              placeholder="Your full name"
+              className={inputCls(nameErr)}
+              onChange={(e) => { setName(e.target.value); setNameErr(''); }}
+            />
+            <FieldError msg={nameErr} />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Chapter */}
+          <div>
+            <Label htmlFor="pf-chapter">
+              <span className="inline-flex items-center gap-1"><Building2 size={9} />Chapter</span>
+            </Label>
+            <select id="pf-chapter" value={chapter} className={inputCls()} onChange={(e) => setChapter(e.target.value)}>
+              <option value="SCHAP">Student Chapter (SCHAP)</option>
+              <option value="SIGAI">SIGAI</option>
+              <option value="SIGBED">SIGBED</option>
+            </select>
+          </div>
 
-            {/* Flat / Building — full width */}
+          {/* Position */}
+          <div>
+            <Label htmlFor="pf-position">
+              <span className="inline-flex items-center gap-1"><User size={9} />Position</span>
+            </Label>
+            <select id="pf-position" value={position} className={inputCls()} onChange={(e) => setPosition(e.target.value)}>
+              <option value="Technical Head">Technical Head</option>
+              <option value="Deputy Secretary">Deputy Secretary</option>
+              <option value="Membership Chair">Membership Chair</option>
+              <option value="Head of Operations">Head of Operations</option>
+              <option value="Team Head">Team Head</option>
+              <option value="Chairperson">Chairperson</option>
+              <option value="Vice Chairperson">Vice Chairperson</option>
+              <option value="Technical Secretary">Technical Secretary</option>
+              <option value="Human Resource Director">Human Resource Director</option>
+              <option value="Treasurer">Treasurer</option>
+              <option value="Creative Director">Creative Director</option>
+              <option value="Secretary">Secretary</option>
+            </select>
+          </div>
+
+          {/* Committee */}
+          {position === 'Team Head' && (
             <div className="sm:col-span-2">
-              <Label htmlFor="pf-building">
-                <span className="inline-flex items-center gap-1"><Building2 size={9} />Flat / Building</span>
+              <Label htmlFor="pf-committee">
+                <span className="inline-flex items-center gap-1"><User size={9} />Committee</span>
               </Label>
-              <input
-                id="pf-building" type="text" value={addr.building} autoComplete="address-line1"
-                placeholder="Flat no., apartment or building name"
-                className={inputCls(buildingErr)}
-                onChange={(e) => setAddrField('building', e.target.value)}
-              />
-              <FieldError msg={buildingErr} />
+              <select id="pf-committee" value={committee} className={inputCls()} onChange={(e) => setCommittee(e.target.value)}>
+                <option value="Events">Events</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Logistics">Logistics</option>
+                <option value="Sponsorship & Curations">Sponsorship & Curations</option>
+                <option value="Finance & Registration">Finance & Registration</option>
+                <option value="Project & Research">Project & Research</option>
+                <option value="Web Development">Web Development</option>
+                <option value="Social Media">Social Media</option>
+                <option value="Graphic Design">Graphic Design</option>
+                <option value="Editorial">Editorial</option>
+              </select>
             </div>
+          )}
 
-            {/* Street / Area — full width */}
-            <div className="sm:col-span-2">
-              <Label htmlFor="pf-street">
-                <span className="inline-flex items-center gap-1"><Navigation size={9} />Street / Area</span>
-              </Label>
-              <input
-                id="pf-street" type="text" value={addr.street} autoComplete="address-line2"
-                placeholder="Street name, locality or area"
-                className={inputCls(streetErr)}
-                onChange={(e) => setAddrField('street', e.target.value)}
-              />
-              <FieldError msg={streetErr} />
-            </div>
-
-            {/* City */}
-            <div>
-              <Label htmlFor="pf-city">
-                <span className="inline-flex items-center gap-1"><Map size={9} />City</span>
-              </Label>
-              <input
-                id="pf-city" type="text" value={addr.city} autoComplete="address-level2"
-                placeholder="e.g. Jaipur"
-                className={inputCls(cityErr)}
-                onChange={(e) => setAddrField('city', e.target.value)}
-              />
-              <FieldError msg={cityErr} />
-            </div>
-
-            {/* State */}
-            <div>
-              <Label htmlFor="pf-state">
-                <span className="inline-flex items-center gap-1"><MapPin size={9} />State</span>
-              </Label>
-              <input
-                id="pf-state" type="text" value={addr.state} autoComplete="address-level1"
-                placeholder="e.g. Rajasthan"
-                className={inputCls(stateErr)}
-                onChange={(e) => setAddrField('state', e.target.value)}
-              />
-              <FieldError msg={stateErr} />
-            </div>
-
-            {/* PIN Code */}
-            <div>
-              <Label htmlFor="pf-pin">
-                <span className="inline-flex items-center gap-1"><Hash size={9} />PIN Code</span>
-              </Label>
-              <input
-                id="pf-pin" type="text" inputMode="numeric" maxLength={6}
-                value={addr.pin} autoComplete="postal-code"
-                placeholder="6-digit PIN"
-                className={inputCls(pinErr)}
-                onChange={(e) => setAddrField('pin', e.target.value.replace(/\D/g, ''))}
-              />
-              <FieldError msg={pinErr} />
-            </div>
-
+          {/* Phone */}
+          <div className={position !== 'Team Head' ? 'sm:col-span-2' : 'sm:col-span-2'}>
+            <Label htmlFor="pf-phone">
+              <span className="inline-flex items-center gap-1"><Phone size={9} />Phone Number</span>
+            </Label>
+            <input
+              id="pf-phone" type="tel" value={phone} autoComplete="tel"
+              placeholder="+91 98765 43210"
+              className={inputCls(phoneErr)}
+              onChange={(e) => { setPhone(e.target.value); setPhoneErr(''); }}
+            />
+            <FieldError msg={phoneErr} />
           </div>
         </div>
 

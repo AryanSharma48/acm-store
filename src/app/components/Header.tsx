@@ -77,9 +77,10 @@ export default function Header() {
         {/* Logo */}
         <Link
           href="/"
-          className="font-serif text-xl sm:text-2xl font-bold text-royal-blue tracking-wide hover:text-gold transition-colors duration-300"
+          className="flex items-center gap-3 font-serif text-xl sm:text-2xl font-bold text-royal-blue tracking-wide hover:text-gold transition-colors duration-300"
         >
-          ACM STORE
+          <img src="/logo.jpeg" alt="ACM Logo" className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
+          <span className="hidden sm:block">ACM STORE</span>
         </Link>
 
         {/* Navigation & Icons */}
@@ -99,7 +100,7 @@ export default function Header() {
             
             <button 
               onClick={handleProfileClick}
-              className="text-gold hover:text-royal-blue transition-colors duration-300" 
+              className="p-2 -m-2 text-gold hover:text-royal-blue transition-colors duration-300" 
               title={user ? "Profile" : "Sign In"}
             >
               {user ? <User size={22} strokeWidth={1.5} /> : <LogIn size={22} strokeWidth={1.5} />}
@@ -108,7 +109,7 @@ export default function Header() {
             {isAdmin ? (
               <Link 
                 href="/admin/products" 
-                className="relative text-gold hover:text-royal-blue transition-colors duration-300" 
+                className="relative p-2 -m-2 text-gold hover:text-royal-blue transition-colors duration-300" 
                 title="Product Management"
               >
                 <Package size={22} strokeWidth={1.5} />
@@ -116,7 +117,7 @@ export default function Header() {
             ) : (
               <Link 
                 href="/cart" 
-                className="relative text-gold hover:text-royal-blue transition-colors duration-300" 
+                className="relative p-2 -m-2 text-gold hover:text-royal-blue transition-colors duration-300" 
                 title="Your Requisition"
               >
                 <ShoppingCart size={22} strokeWidth={1.5} />
@@ -129,7 +130,7 @@ export default function Header() {
             )}
             
             <button 
-              className="md:hidden text-royal-blue hover:text-gold transition-colors duration-300"
+              className="md:hidden p-2 -m-2 text-royal-blue hover:text-gold transition-colors duration-300"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? <X size={24} strokeWidth={1.5} /> : <Menu size={24} strokeWidth={1.5} />}
@@ -141,6 +142,15 @@ export default function Header() {
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <nav className="md:hidden flex flex-col items-center gap-6 py-8 border-t border-royal-blue/10 bg-canvas absolute top-full left-0 w-full shadow-lg">
+          {user ? (
+            <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="text-gold hover:text-royal-blue transition-colors duration-300 uppercase tracking-widest text-sm font-bold">
+              My Profile
+            </Link>
+          ) : (
+            <button onClick={() => { setIsMobileMenuOpen(false); handleLogin(); }} className="text-gold hover:text-royal-blue transition-colors duration-300 uppercase tracking-widest text-sm font-bold">
+              Sign In
+            </button>
+          )}
           <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="text-royal-blue/70 hover:text-royal-blue transition-colors duration-300 uppercase tracking-widest text-sm font-bold">
             Collection
           </Link>

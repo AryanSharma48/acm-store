@@ -33,8 +33,9 @@ const FULL_PROFILE = {
   name: 'Aryan Sharma',
   email: 'aryan@acm.com',
   phone: '+91 9876543210',
-  // Serialised address — 5 newline-delimited lines
-  address: 'Flat 4B, Sunrise Towers\nMG Road\nJaipur\nRajasthan\n302001',
+  chapter: 'SCHAP',
+  position: 'Chairperson',
+  committee: 'Events',
 };
 
 const EMPTY_PROFILE = {
@@ -42,7 +43,9 @@ const EMPTY_PROFILE = {
   name: null,
   email: null,
   phone: null,
-  address: null,
+  chapter: null,
+  position: null,
+  committee: null,
 };
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -74,33 +77,27 @@ describe('ProfileForm Component', () => {
       expect(screen.getByText('aryan@acm.com')).toBeInTheDocument();
     });
 
-    it('should pre-populate the phone input from the profile', () => {
+    it('should pre-populate the inputs from the profile', () => {
       // Arrange & Act
       render(<ProfileForm profile={FULL_PROFILE} />);
 
       // Assert
       expect(screen.getByPlaceholderText('+91 98765 43210')).toHaveValue('+91 9876543210');
+      expect(screen.getByPlaceholderText(/Your full name/i)).toHaveValue('Aryan Sharma');
+      // Should show the correct select values
+      expect(screen.getByLabelText(/Chapter/i)).toHaveValue('SCHAP');
+      expect(screen.getByLabelText(/Position/i)).toHaveValue('Chairperson');
     });
 
-    it('should pre-populate all five address sub-fields from the serialised profile address', () => {
-      // Arrange & Act
-      render(<ProfileForm profile={FULL_PROFILE} />);
-
-      // Assert
-      expect(screen.getByPlaceholderText(/flat no\./i)).toHaveValue('Flat 4B, Sunrise Towers');
-      expect(screen.getByPlaceholderText(/street name/i)).toHaveValue('MG Road');
-      expect(screen.getByPlaceholderText(/e\.g\. jaipur/i)).toHaveValue('Jaipur');
-      expect(screen.getByPlaceholderText(/e\.g\. rajasthan/i)).toHaveValue('Rajasthan');
-      expect(screen.getByPlaceholderText(/6-digit pin/i)).toHaveValue('302001');
-    });
-
-    it('should render empty inputs when the profile has no address or phone', () => {
+    it('should render empty inputs and default selects when the profile has no data', () => {
       // Arrange & Act
       render(<ProfileForm profile={EMPTY_PROFILE} />);
 
       // Assert — no pre-fill, all empty
       expect(screen.getByPlaceholderText('+91 98765 43210')).toHaveValue('');
-      expect(screen.getByPlaceholderText(/flat no\./i)).toHaveValue('');
+      expect(screen.getByPlaceholderText(/Your full name/i)).toHaveValue('');
+      expect(screen.getByLabelText(/Chapter/i)).toHaveValue('SCHAP');
+      expect(screen.getByLabelText(/Position/i)).toHaveValue('Chairperson');
     });
 
     it('should render the Save Details and Sign Out buttons', () => {
@@ -116,40 +113,27 @@ describe('ProfileForm Component', () => {
   // ── Happy Path: Saving ─────────────────────────────────────────────────────
 
   describe('Happy Path: Saving Profile', () => {
-    it('should call supabase update with serialised address and show success banner', async () => {
+    it('should call supabase update with profile details and show success banner', async () => {
       // Arrange
       const user = userEvent.setup();
       render(<ProfileForm profile={FULL_PROFILE} />);
 
-      // Act — change the city and save
-      const cityInput = screen.getByPlaceholderText(/e\.g\. jaipur/i);
-      await user.clear(cityInput);
-      await user.type(cityInput, 'Mumbai');
+      // Act — change the name and save
+      const nameInput = screen.getByPlaceholderText(/Your full name/i);
+      await user.clear(nameInput);
+      await user.type(nameInput, 'New Name');
       await user.click(screen.getByRole('button', { name: /save details/i }));
 
       // Assert
       await waitFor(() => {
         expect(mockUpdate).toHaveBeenCalledWith(
           expect.objectContaining({
-            address: expect.stringContaining('Mumbai'),
+            name: 'New Name',
           })
         );
         expect(mockEq).toHaveBeenCalledWith('id', 'user-123');
         expect(screen.getByText(/profile saved successfully/i)).toBeInTheDocument();
       });
-    });
-
-    it('should strip non-digit characters from PIN code input', async () => {
-      // Arrange
-      const user = userEvent.setup();
-      render(<ProfileForm profile={EMPTY_PROFILE} />);
-      const pinInput = screen.getByPlaceholderText(/6-digit pin/i);
-
-      // Act
-      await user.type(pinInput, '30abc2001');
-
-      // Assert — only digits should remain
-      expect(pinInput).toHaveValue('302001');
     });
   });
 
@@ -175,40 +159,18 @@ describe('ProfileForm Component', () => {
       });
     });
 
-    it('should show an error and NOT call update when the PIN code is not 6 digits', async () => {
-      // Arrange
-      const user = userEvent.setup();
-      render(<ProfileForm profile={FULL_PROFILE} />);
-
-      const pinInput = screen.getByPlaceholderText(/6-digit pin/i);
-      await user.clear(pinInput);
-      await user.type(pinInput, '123'); // only 3 digits
-
-      // Act
-      await user.click(screen.getByRole('button', { name: /save details/i }));
-
-      // Assert
-      await waitFor(() => {
-        expect(screen.getByText(/valid 6-digit pin/i)).toBeInTheDocument();
-        expect(mockUpdate).not.toHaveBeenCalled();
-      });
-    });
-
-    it('should show required errors for all empty address sub-fields on submit', async () => {
+    it('should show required errors for empty fields on submit', async () => {
       // Arrange
       const user = userEvent.setup();
       render(<ProfileForm profile={EMPTY_PROFILE} />);
 
-      // Add a valid phone so only address fields fail
-      await user.type(screen.getByPlaceholderText('+91 98765 43210'), '+91 9876543210');
-
       // Act
       await user.click(screen.getByRole('button', { name: /save details/i }));
 
-      // Assert — all 5 address fields should show "Required."
+      // Assert — name and phone should show required
       await waitFor(() => {
-        const requiredMessages = screen.getAllByText('Required.');
-        expect(requiredMessages.length).toBeGreaterThanOrEqual(4); // building, street, city, state, pin
+        expect(screen.getByText(/Name is required/i)).toBeInTheDocument();
+        expect(screen.getByText(/Phone number is required/i)).toBeInTheDocument();
         expect(mockUpdate).not.toHaveBeenCalled();
       });
     });
