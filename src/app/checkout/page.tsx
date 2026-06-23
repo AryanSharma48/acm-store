@@ -46,13 +46,11 @@ interface AddressFields {
 
 interface FieldError {
   name?: string;
-  email?: string;
+  emailPrefix?: string;
   phone?: string;
-  building?: string;
-  street?: string;
-  city?: string;
-  state?: string;
-  pin?: string;
+  chapter?: string;
+  position?: string;
+  committee?: string;
 }
 
 interface OrderResult {
@@ -264,8 +262,11 @@ export default function CheckoutPage() {
 
   // Contact fields
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [emailPrefix, setEmailPrefix] = useState('');
   const [phone, setPhone] = useState('');
+  const [chapter, setChapter] = useState('SCHAP');
+  const [position, setPosition] = useState('Chairperson');
+  const [committee, setCommittee] = useState('Events');
 
   // Address sub-fields
   const [addr, setAddr] = useState<AddressFields>({ ...EMPTY_ADDR });
@@ -294,11 +295,12 @@ export default function CheckoutPage() {
       if (profileData) {
         setProfile(profileData);
         setName(profileData.name ?? '');
-        setEmail(profileData.email ?? session.user.email ?? '');
+        const existingEmail = profileData.email ?? session.user.email ?? '';
+        setEmailPrefix(existingEmail.split('@')[0] ?? '');
         setPhone(profileData.phone ?? '');
-        setAddr(parseAddress(profileData.address));
       } else {
-        setEmail(session.user.email ?? '');
+        const existingEmail = session.user.email ?? '';
+        setEmailPrefix(existingEmail.split('@')[0] ?? '');
         setName(session.user.user_metadata?.full_name ?? '');
       }
       setIsAuthLoading(false);
@@ -314,16 +316,13 @@ export default function CheckoutPage() {
   const validate = (): boolean => {
     const e: FieldError = {};
     if (!name.trim())  e.name  = 'Full name is required.';
-    if (!email.trim()) e.email = 'Email is required.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Invalid email address.';
+    if (!emailPrefix.trim()) e.emailPrefix = 'Outlook ID is required.';
+    else if (emailPrefix.includes('@')) e.emailPrefix = 'Do not include @muj.manipal.edu';
     if (!phone.trim()) e.phone = 'Phone number is required.';
     else if (!/^\+?[\d\s\-()]{7,15}$/.test(phone))      e.phone = 'Invalid phone number.';
-    if (!addr.building.trim()) e.building = 'Flat / building is required.';
-    if (!addr.street.trim())   e.street   = 'Street / area is required.';
-    if (!addr.city.trim())     e.city     = 'City is required.';
-    if (!addr.state.trim())    e.state    = 'State is required.';
-    if (!addr.pin.trim())      e.pin      = 'PIN code is required.';
-    else if (!/^\d{6}$/.test(addr.pin.trim())) e.pin = 'Enter a valid 6-digit PIN.';
+    if (!chapter) e.chapter = 'Chapter is required.';
+    if (!position) e.position = 'Position is required.';
+    if (position === 'Team Head' && !committee) e.committee = 'Committee is required.';
     setFieldErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -350,7 +349,14 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify({
           items: items.map(({ id, quantity }) => ({ id, quantity })),
-          shippingDetails: { name, email, phone, address: serializeAddress(addr) },
+          shippingDetails: { 
+            name, 
+            email: `${emailPrefix}@muj.manipal.edu`, 
+            phone, 
+            chapter,
+            position,
+            committee: position === 'Team Head' ? committee : null
+          },
         }),
       });
 
@@ -441,13 +447,60 @@ export default function CheckoutPage() {
                     onChange={(e) => { setName(e.target.value); setFieldErrors((p) => ({ ...p, name: undefined })); }} />
                 </FormField>
 
-                <FormField id="co-email" label="Email" icon={<Mail size={10} />} error={fieldErrors.email}>
-                  <input id="co-email" type="email" value={email} autoComplete="email"
-                    placeholder="you@example.com" className={inputCls(fieldErrors.email)}
-                    onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: undefined })); }} />
+                <FormField id="co-email" label="Outlook Email ID" icon={<Mail size={10} />} error={fieldErrors.emailPrefix} className="sm:col-span-2">
+                  <div className="flex">
+                    <input id="co-email" type="text" value={emailPrefix}
+                      placeholder="firstname.lastname" 
+                      className={`flex-1 px-3 py-2.5 bg-canvas border border-r-0 text-sm text-royal-blue placeholder:text-royal-blue/25 outline-none transition-colors duration-200 focus:border-gold ${fieldErrors.emailPrefix ? 'border-red-400' : 'border-royal-blue/15'}`}
+                      onChange={(e) => { setEmailPrefix(e.target.value); setFieldErrors((p) => ({ ...p, emailPrefix: undefined })); }} />
+                    <span className="flex items-center px-3 bg-royal-blue/5 border border-l-0 border-royal-blue/15 text-sm text-royal-blue/60">
+                      @muj.manipal.edu
+                    </span>
+                  </div>
                 </FormField>
 
-                <FormField id="co-phone" label="Phone" icon={<Phone size={10} />} error={fieldErrors.phone}>
+                <FormField id="co-chapter" label="Chapter" icon={<Building2 size={10} />} error={fieldErrors.chapter}>
+                  <select id="co-chapter" value={chapter}
+                    className={inputCls(fieldErrors.chapter)}
+                    onChange={(e) => { setChapter(e.target.value); setFieldErrors((p) => ({ ...p, chapter: undefined })); }}>
+                    <option value="SCHAP">Student Chapter (SCHAP)</option>
+                    <option value="SIGAI">SIGAI</option>
+                    <option value="SIGBED">SIGBED</option>
+                  </select>
+                </FormField>
+
+                <FormField id="co-position" label="Position" icon={<User size={10} />} error={fieldErrors.position}>
+                  <select id="co-position" value={position}
+                    className={inputCls(fieldErrors.position)}
+                    onChange={(e) => { setPosition(e.target.value); setFieldErrors((p) => ({ ...p, position: undefined })); }}>
+                    <option value="Technical Head">Technical Head</option>
+                    <option value="Deputy Secretary">Deputy Secretary</option>
+                    <option value="Membership Chair">Membership Chair</option>
+                    <option value="Head of Operations">Head of Operations</option>
+                    <option value="Team Head">Team Head</option>
+                  </select>
+                </FormField>
+
+                {position === 'Team Head' && (
+                  <FormField id="co-committee" label="Committee" icon={<User size={10} />} error={fieldErrors.committee}>
+                    <select id="co-committee" value={committee}
+                      className={inputCls(fieldErrors.committee)}
+                      onChange={(e) => { setCommittee(e.target.value); setFieldErrors((p) => ({ ...p, committee: undefined })); }}>
+                      <option value="Events">Events</option>
+                      <option value="Marketing">Marketing</option>
+                      <option value="Logistics">Logistics</option>
+                      <option value="Sponsorship & Curations">Sponsorship & Curations</option>
+                      <option value="Finance & Registration">Finance & Registration</option>
+                      <option value="Project & Research">Project & Research</option>
+                      <option value="Web Development">Web Development</option>
+                      <option value="Social Media">Social Media</option>
+                      <option value="Graphic Design">Graphic Design</option>
+                      <option value="Editorial">Editorial</option>
+                    </select>
+                  </FormField>
+                )}
+
+                <FormField id="co-phone" label="Phone" icon={<Phone size={10} />} error={fieldErrors.phone} className={position !== 'Team Head' ? 'sm:col-span-2' : ''}>
                   <input id="co-phone" type="tel" value={phone} autoComplete="tel"
                     placeholder="+91 98765 43210" className={inputCls(fieldErrors.phone)}
                     onChange={(e) => { setPhone(e.target.value); setFieldErrors((p) => ({ ...p, phone: undefined })); }} />
@@ -461,55 +514,6 @@ export default function CheckoutPage() {
               )}
             </section>
 
-            {/* Delivery Address */}
-            <section className="relative bg-canvas border border-royal-blue/10 p-5 sm:p-7">
-              <CornerBrackets />
-              <div className="flex items-center gap-2 mb-5">
-                <MapPin size={14} className="text-gold" strokeWidth={1.5} />
-                <h2 className="font-serif text-base font-bold text-royal-blue tracking-widest uppercase">
-                  Delivery Address
-                </h2>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField id="co-building" label="Flat / Building" icon={<Building2 size={10} />} error={fieldErrors.building} className="sm:col-span-2">
-                  <input id="co-building" type="text" value={addr.building} autoComplete="address-line1"
-                    placeholder="Flat no., apartment or building name" className={inputCls(fieldErrors.building)}
-                    onChange={(e) => setAddrField('building', e.target.value)} />
-                </FormField>
-
-                <FormField id="co-street" label="Street / Area" icon={<Navigation size={10} />} error={fieldErrors.street} className="sm:col-span-2">
-                  <input id="co-street" type="text" value={addr.street} autoComplete="address-line2"
-                    placeholder="Street name, locality or area" className={inputCls(fieldErrors.street)}
-                    onChange={(e) => setAddrField('street', e.target.value)} />
-                </FormField>
-
-                <FormField id="co-city" label="City" icon={<Map size={10} />} error={fieldErrors.city}>
-                  <input id="co-city" type="text" value={addr.city} autoComplete="address-level2"
-                    placeholder="e.g. Jaipur" className={inputCls(fieldErrors.city)}
-                    onChange={(e) => setAddrField('city', e.target.value)} />
-                </FormField>
-
-                <FormField id="co-state" label="State" icon={<MapPin size={10} />} error={fieldErrors.state}>
-                  <input id="co-state" type="text" value={addr.state} autoComplete="address-level1"
-                    placeholder="e.g. Rajasthan" className={inputCls(fieldErrors.state)}
-                    onChange={(e) => setAddrField('state', e.target.value)} />
-                </FormField>
-
-                <FormField id="co-pin" label="PIN Code" icon={<Hash size={10} />} error={fieldErrors.pin}>
-                  <input id="co-pin" type="text" inputMode="numeric" maxLength={6}
-                    value={addr.pin} autoComplete="postal-code"
-                    placeholder="6-digit PIN" className={inputCls(fieldErrors.pin)}
-                    onChange={(e) => setAddrField('pin', e.target.value.replace(/\D/g, ''))} />
-                </FormField>
-              </div>
-
-              {profile?.address && (
-                <p className="mt-4 text-[10px] text-royal-blue/35 tracking-wide">
-                  <span className="text-gold mr-1">✦</span>Pre-filled from your profile — edit freely.
-                </p>
-              )}
-            </section>
 
             {/* API error */}
             {apiError && (
@@ -527,7 +531,7 @@ export default function CheckoutPage() {
             >
               {isSubmitting
                 ? <><Loader2 size={14} className="animate-spin" />Processing…</>
-                : <><Package size={14} strokeWidth={1.5} />Confirm &amp; Place Order</>}
+                : <><Package size={14} strokeWidth={1.5} />Pay Now</>}
             </button>
           </form>
 
@@ -552,6 +556,9 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-royal-blue truncate">{item.name}</p>
+                      {item.size && (
+                        <p className="text-[10px] font-bold text-royal-blue/60 uppercase tracking-widest mt-0.5">Size: {item.size}</p>
+                      )}
                       <p className="text-[11px] text-royal-blue/45 mt-0.5">
                         ₹{item.price.toLocaleString('en-IN')} × {item.quantity}
                       </p>
@@ -591,7 +598,7 @@ export default function CheckoutPage() {
               >
                 {isSubmitting
                   ? <><Loader2 size={14} className="animate-spin" />Processing…</>
-                  : <><Package size={14} strokeWidth={1.5} />Confirm &amp; Place Order</>}
+                  : <><Package size={14} strokeWidth={1.5} />Pay Now</>}
               </button>
 
               <p className="mt-4 text-center text-[10px] text-royal-blue/25 tracking-wide">

@@ -8,6 +8,7 @@ CREATE TABLE products (
   price NUMERIC NOT NULL,
   stock INT DEFAULT 0,
   image_url TEXT,
+  chapter VARCHAR(50) DEFAULT 'General',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -54,11 +55,14 @@ USING (true);
 -- Actually, we'll probably use service_role key for backend operations. 
 -- For client reads, maybe we don't need it.
 
--- Seed Dummy Data
-INSERT INTO products (name, description, price, stock, image_url)
+INSERT INTO products (name, description, price, stock, image_url, chapter)
 VALUES 
-  ('ACM Hoodie', 'Premium quality, ultra-soft ACM branded hoodie perfect for coding sessions.', 1499, 50, 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=800&auto=format&fit=crop'),
-  ('ACM T-Shirt', 'Classic 100% cotton T-shirt featuring the ACM logo.', 699, 100, 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=800&auto=format&fit=crop');
+  ('SCHAP Jacket + Polo Combo', 'Premium quality SCHAP branded jacket and polo combo.', 1800, 50, 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=800&auto=format&fit=crop', 'SCHAP'),
+  ('SCHAP Polo', 'Classic 100% cotton SCHAP Polo T-shirt.', 1000, 100, 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=800&auto=format&fit=crop', 'SCHAP'),
+  ('SIGAI Jacket + Polo Combo', 'Premium quality SIGAI branded jacket and polo combo.', 1800, 50, 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=800&auto=format&fit=crop', 'SIGAI'),
+  ('SIGAI Polo', 'Classic 100% cotton SIGAI Polo T-shirt.', 1000, 100, 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=800&auto=format&fit=crop', 'SIGAI'),
+  ('SIGBED Jacket + Polo Combo', 'Premium quality SIGBED branded jacket and polo combo.', 1800, 50, 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=800&auto=format&fit=crop', 'SIGBED'),
+  ('SIGBED Polo', 'Classic 100% cotton SIGBED Polo T-shirt.', 1000, 100, 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=800&auto=format&fit=crop', 'SIGBED');
 
 
 CREATE TABLE public.profiles (
@@ -124,3 +128,10 @@ USING (auth.jwt() ->> 'email' = email);
 
 -- Admins table is strictly internal, so no public policies.
 -- The backend Service Role will query it.
+
+-- Migration to add extra profile details from checkout
+-- RUN THIS IN SUPABASE SQL EDITOR
+-- ALTER TABLE public.profiles 
+-- ADD COLUMN chapter TEXT, 
+-- ADD COLUMN position TEXT, 
+-- ADD COLUMN committee TEXT;

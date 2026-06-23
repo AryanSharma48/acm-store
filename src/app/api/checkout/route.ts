@@ -35,7 +35,9 @@ interface ShippingDetails {
   name: string;
   email: string;
   phone: string;
-  address: string;
+  chapter: string;
+  position: string;
+  committee?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -126,10 +128,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const { name, email, phone, address } = shippingDetails ?? {};
-    if (!name || !email || !phone || !address) {
+    const { name, email, phone, chapter, position, committee } = shippingDetails ?? {};
+    if (!name || !email || !phone || !chapter || !position) {
       return NextResponse.json(
-        { error: 'All shipping details (name, email, phone, address) are required.' },
+        { error: 'All details (name, email, phone, chapter, position) are required.' },
         { status: 400 }
       );
     }
@@ -176,6 +178,25 @@ export async function POST(req: Request) {
       }
 
       totalAmountINR += dbProduct.price * cartItem.quantity;
+    }
+
+    // ------------------------------------------------------------------
+    // 3.5. Update user profile with the new fields
+    // ------------------------------------------------------------------
+    const { error: profileUpdateError } = await supabaseAdmin
+      .from('profiles')
+      .update({
+        name,
+        phone,
+        chapter,
+        position,
+        committee,
+      })
+      .eq('id', user.id);
+
+    if (profileUpdateError) {
+      console.error('Profile update error:', profileUpdateError);
+      // Non-fatal, so we continue to create the order
     }
 
     // ------------------------------------------------------------------
