@@ -4,16 +4,18 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 type CartItem = {
-  id: string;
+  id: string; // composite id: productId-size
+  productId: string;
   name: string;
   price: number;
   image_url: string;
   quantity: number;
+  size: string;
 };
 
 type CartContextType = {
   items: CartItem[];
-  addItem: (item: Omit<CartItem, 'quantity'>) => void;
+  addItem: (item: Omit<CartItem, 'quantity' | 'id'>) => void;
   removeItem: (id: string) => void;
   decreaseQuantity: (id: string) => void;
   clearCart: () => void;
@@ -44,13 +46,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [items, isLoaded]);
 
-  const addItem = (item: Omit<CartItem, 'quantity'>) => {
+  const addItem = (item: Omit<CartItem, 'quantity' | 'id'>) => {
+    const cartId = `${item.productId}-${item.size}`;
     setItems((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
+      const existing = prev.find((i) => i.id === cartId);
       if (existing) {
-        return prev.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
+        return prev.map((i) => (i.id === cartId ? { ...i, quantity: i.quantity + 1 } : i));
       }
-      return [...prev, { ...item, quantity: 1 }];
+      return [...prev, { ...item, id: cartId, quantity: 1 }];
     });
   };
 

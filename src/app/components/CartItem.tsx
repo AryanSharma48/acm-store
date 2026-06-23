@@ -5,10 +5,12 @@
 
 type CartItem = {
   id: string;
+  productId?: string;
   name: string;
   price: number;
   image_url: string;
   quantity: number;
+  size?: string;
 };
 
 type Props = {
@@ -23,6 +25,11 @@ export default function CartItem({ item, onRemove }: Props) {
         <img src={item.image_url} alt={item.name} width={64} height={64} className="object-cover" />
         <div>
           <p className="font-medium text-royal-blue">{item.name}</p>
+          {item.size && (
+            <p className="text-xs font-bold uppercase tracking-widest text-royal-blue/60 mt-1 mb-1">
+              Size: {item.size}
+            </p>
+          )}
           <p className="text-sm text-royal-blue/70">₹{item.price} × {item.quantity}</p>
         </div>
       </div>
