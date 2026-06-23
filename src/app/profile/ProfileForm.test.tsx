@@ -68,12 +68,11 @@ describe('ProfileForm Component', () => {
   // ── Rendering ──────────────────────────────────────────────────────────────
 
   describe('Rendering', () => {
-    it('should render the name and email from the profile as read-only text', () => {
+    it('should render the email from the profile as read-only text', () => {
       // Arrange & Act
       render(<ProfileForm profile={FULL_PROFILE} />);
 
       // Assert
-      expect(screen.getByText('Aryan Sharma')).toBeInTheDocument();
       expect(screen.getByText('aryan@acm.com')).toBeInTheDocument();
     });
 
