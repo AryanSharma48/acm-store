@@ -11,6 +11,7 @@ export const addProduct = async (payload: {
   price: number;
   stock?: number;
   image_url?: string;
+  chapter?: string;
 }) => {
   return await createProduct(payload);
 };
@@ -21,6 +22,7 @@ export const editProduct = async (id: string, payload: Partial<{
   price: number;
   stock: number;
   image_url: string;
+  chapter: string;
 }>) => {
   return await updateProduct(id, payload);
 };

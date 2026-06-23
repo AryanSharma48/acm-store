@@ -13,6 +13,7 @@ export const createProduct = async (payload: {
   price: number;
   stock?: number;
   image_url?: string;
+  chapter?: string;
 }) => {
   const { data, error } = await supabase.from('products').insert([payload]).select();
   if (error) throw error;
@@ -25,6 +26,7 @@ export const updateProduct = async (id: string, payload: Partial<{
   price: number;
   stock: number;
   image_url: string;
+  chapter: string;
 }>) => {
   const { data, error } = await supabase
     .from('products')
