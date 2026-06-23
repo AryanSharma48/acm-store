@@ -61,7 +61,8 @@ const VALID_PAYLOAD = {
     name: 'Aryan Sharma',
     email: 'aryan@acm.com',
     phone: '+91 9876543210',
-    address: 'Flat 4B\nMG Road\nJaipur\nRajasthan\n302001',
+    chapter: 'SCHAP',
+    position: 'Member',
   },
 };
 
@@ -177,10 +178,14 @@ describe('POST /api/checkout', () => {
       const mockSelectOrder  = jest.fn().mockResolvedValue({ data: [{ id: 'order-abc' }], error: null });
       const mockInsertOrder  = jest.fn().mockReturnValue({ select: mockSelectOrder });
 
+      const mockEqProfile = jest.fn().mockResolvedValue({ error: null });
+      const mockUpdateProfile = jest.fn().mockReturnValue({ eq: mockEqProfile });
+
       // Wire `from()` to return different chains based on table name
       mockAdminFrom.mockImplementation((table: string) => {
         if (table === 'products') return { select: mockSelProd };
         if (table === 'orders')   return { insert: mockInsertOrder };
+        if (table === 'profiles') return { update: mockUpdateProfile };
         return {};
       });
 
@@ -233,7 +238,12 @@ describe('POST /api/checkout', () => {
       // Arrange
       const mockIn     = jest.fn().mockResolvedValue({ data: [{ id: 'prod-1', name: 'Product 1', price: 500, stock: 10 }], error: null });
       const mockSel    = jest.fn().mockReturnValue({ in: mockIn });
-      mockAdminFrom.mockImplementation(() => ({ select: mockSel }));
+      const mockEqProfile = jest.fn().mockResolvedValue({ error: null });
+      const mockUpdateProfile = jest.fn().mockReturnValue({ eq: mockEqProfile });
+      mockAdminFrom.mockImplementation((table: string) => {
+        if (table === 'profiles') return { update: mockUpdateProfile };
+        return { select: mockSel };
+      });
 
       mockCreateOrder.mockRejectedValue(new Error('Razorpay network timeout'));
 
@@ -248,7 +258,12 @@ describe('POST /api/checkout', () => {
       // Arrange — DB returns empty list for the product lookup
       const mockIn     = jest.fn().mockResolvedValue({ data: [], error: null });
       const mockSel    = jest.fn().mockReturnValue({ in: mockIn });
-      mockAdminFrom.mockImplementation(() => ({ select: mockSel }));
+      const mockEqProfile = jest.fn().mockResolvedValue({ error: null });
+      const mockUpdateProfile = jest.fn().mockReturnValue({ eq: mockEqProfile });
+      mockAdminFrom.mockImplementation((table: string) => {
+        if (table === 'profiles') return { update: mockUpdateProfile };
+        return { select: mockSel };
+      });
 
       // Act
       const res = await POST(buildRequest(VALID_PAYLOAD, { token: 'valid-token' }));

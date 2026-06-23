@@ -46,7 +46,7 @@ describe('CartContext Unit Tests', () => {
     it('should successfully add a new item to the cart', () => {
       // Arrange
       const { result } = renderHook(() => useCart(), { wrapper });
-      const newItem = { id: '1', name: 'Hoodie', price: 50, image_url: '/hoodie.jpg' };
+      const newItem = { productId: '1', size: 'M', name: 'Hoodie', price: 50, image_url: '/hoodie.jpg' };
 
       // Act
       act(() => {
@@ -55,14 +55,14 @@ describe('CartContext Unit Tests', () => {
 
       // Assert
       expect(result.current.items).toHaveLength(1);
-      expect(result.current.items[0]).toStrictEqual({ ...newItem, quantity: 1 });
+      expect(result.current.items[0]).toStrictEqual({ ...newItem, id: '1-M', quantity: 1 });
       expect(result.current.totalAmount).toBe(50);
     });
 
     it('should increment quantity when adding an identical item', () => {
       // Arrange
       const { result } = renderHook(() => useCart(), { wrapper });
-      const item = { id: '2', name: 'Mug', price: 15, image_url: '/mug.jpg' };
+      const item = { productId: '2', size: 'M', name: 'Mug', price: 15, image_url: '/mug.jpg' };
 
       // Act
       act(() => {
@@ -79,7 +79,7 @@ describe('CartContext Unit Tests', () => {
     it('should successfully decrease the quantity of an existing item', () => {
       // Arrange
       const { result } = renderHook(() => useCart(), { wrapper });
-      const item = { id: '3', name: 'Sticker', price: 5, image_url: '/sticker.jpg' };
+      const item = { productId: '3', size: 'M', name: 'Sticker', price: 5, image_url: '/sticker.jpg' };
       
       act(() => {
         result.current.addItem(item);
@@ -88,7 +88,7 @@ describe('CartContext Unit Tests', () => {
 
       // Act
       act(() => {
-        result.current.decreaseQuantity('3');
+        result.current.decreaseQuantity('3-M');
       });
 
       // Assert
@@ -100,7 +100,7 @@ describe('CartContext Unit Tests', () => {
     it('should completely remove an item when decreaseQuantity drops it to zero', () => {
       // Arrange
       const { result } = renderHook(() => useCart(), { wrapper });
-      const item = { id: '4', name: 'Pen', price: 2, image_url: '/pen.jpg' };
+      const item = { productId: '4', size: 'M', name: 'Pen', price: 2, image_url: '/pen.jpg' };
       
       act(() => {
         result.current.addItem(item);
@@ -108,7 +108,7 @@ describe('CartContext Unit Tests', () => {
 
       // Act
       act(() => {
-        result.current.decreaseQuantity('4');
+        result.current.decreaseQuantity('4-M');
       });
 
       // Assert
@@ -120,8 +120,8 @@ describe('CartContext Unit Tests', () => {
       // Arrange
       const { result } = renderHook(() => useCart(), { wrapper });
       act(() => {
-        result.current.addItem({ id: '1', name: 'P1', price: 10, image_url: '' });
-        result.current.addItem({ id: '2', name: 'P2', price: 20, image_url: '' });
+        result.current.addItem({ productId: '1', size: 'M', name: 'P1', price: 10, image_url: '' });
+        result.current.addItem({ productId: '2', size: 'M', name: 'P2', price: 20, image_url: '' });
       });
 
       // Act
@@ -139,7 +139,7 @@ describe('CartContext Unit Tests', () => {
     it('should handle zero-price items correctly', () => {
       // Arrange
       const { result } = renderHook(() => useCart(), { wrapper });
-      const zeroPriceItem = { id: 'free-item', name: 'Free Promo', price: 0, image_url: '/promo.jpg' };
+      const zeroPriceItem = { productId: 'free-item', size: 'M', name: 'Free Promo', price: 0, image_url: '/promo.jpg' };
 
       // Act
       act(() => {
@@ -158,7 +158,7 @@ describe('CartContext Unit Tests', () => {
       const { result } = renderHook(() => useCart(), { wrapper });
       
       act(() => {
-        result.current.addItem({ id: 'valid-id', name: 'Valid', price: 10, image_url: '' });
+        result.current.addItem({ productId: 'valid-id', size: 'M', name: 'Valid', price: 10, image_url: '' });
       });
 
       // Act
@@ -168,7 +168,7 @@ describe('CartContext Unit Tests', () => {
 
       // Assert
       expect(result.current.items).toHaveLength(1);
-      expect(result.current.items[0].id).toBe('valid-id');
+      expect(result.current.items[0].id).toBe('valid-id-M');
     });
 
     it('should silently ignore decreaseQuantity on an item ID that does not exist', () => {
@@ -188,7 +188,7 @@ describe('CartContext Unit Tests', () => {
     it('should calculate extreme pricing sums correctly (integer boundaries)', () => {
       // Arrange
       const { result } = renderHook(() => useCart(), { wrapper });
-      const expensiveItem = { id: 'expensive', name: 'Gold Laptop', price: 9999999, image_url: '' };
+      const expensiveItem = { productId: 'expensive', size: 'M', name: 'Gold Laptop', price: 9999999, image_url: '' };
 
       // Act
       act(() => {
