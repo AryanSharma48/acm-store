@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        // Allow Cloudinary images (used by new products)
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
     ],
   },
 };
